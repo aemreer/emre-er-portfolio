@@ -53,7 +53,13 @@ export default function Navbar() {
           </a>
         </div>
 
-        <button className="icon-btn lg:hidden" onClick={() => setIsOpen((value) => !value)} aria-label="Menüyü aç">
+        <button
+          className="icon-btn lg:hidden"
+          onClick={() => setIsOpen((value) => !value)}
+          aria-label={isOpen ? "Menüyü kapat" : "Menüyü aç"}
+          aria-expanded={isOpen}
+          aria-controls="mobile-navigation"
+        >
           {isOpen ? <FiX /> : <FiMenu />}
         </button>
       </nav>
@@ -61,6 +67,7 @@ export default function Navbar() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            id="mobile-navigation"
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}

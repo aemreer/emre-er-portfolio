@@ -1,16 +1,43 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { FiGithub, FiLinkedin, FiMail, FiMapPin, FiSend } from "react-icons/fi";
 import Section from "./Section";
 
 export default function Contact() {
-  const [sent, setSent] = useState(false);
+  const [status, setStatus] = useState("idle");
+  const statusTimer = useRef(null);
 
-  const handleSubmit = (event) => {
+  useEffect(() => () => window.clearTimeout(statusTimer.current), []);
+
+  const showTemporaryStatus = (nextStatus) => {
+    window.clearTimeout(statusTimer.current);
+    setStatus(nextStatus);
+    statusTimer.current = window.setTimeout(() => setStatus("idle"), 4500);
+  };
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    setSent(true);
-    event.currentTarget.reset();
-    window.setTimeout(() => setSent(false), 3200);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    setStatus("sending");
+
+    try {
+      const response = await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams(formData).toString(),
+      });
+
+      if (!response.ok) {
+        throw new Error("Form gönderilemedi.");
+      }
+
+      form.reset();
+      showTemporaryStatus("success");
+    } catch {
+      showTemporaryStatus("error");
+    }
   };
 
   return (
@@ -43,7 +70,22 @@ export default function Contact() {
         </div>
 
         <div className="relative">
-          <form onSubmit={handleSubmit} className="glass-card grid gap-4 rounded-3xl p-6 sm:p-8">
+          <form
+            name="contact"
+            method="POST"
+            action="/"
+            data-netlify="true"
+            data-netlify-honeypot="bot-field"
+            onSubmit={handleSubmit}
+            className="glass-card grid gap-4 rounded-3xl p-6 sm:p-8"
+          >
+            <input type="hidden" name="form-name" value="contact" />
+            <p className="hidden" aria-hidden="true">
+              <label>
+                Bu alanı boş bırakın
+                <input name="bot-field" tabIndex="-1" autoComplete="off" />
+              </label>
+            </p>
             <label className="field-label">
               Ad Soyad
               <input required type="text" name="name" className="field-input" placeholder="Adınız ve soyadınız" />
@@ -56,20 +98,32 @@ export default function Contact() {
               Mesaj
               <textarea required name="message" rows="5" className="field-input resize-none" placeholder="Pozisyon, ekip veya görüşme detaylarını kısaca yazabilirsiniz" />
             </label>
-            <button type="submit" className="btn-primary justify-center">
-              Gönder <FiSend />
+            <button
+              type="submit"
+              disabled={status === "sending"}
+              className="btn-primary justify-center disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {status === "sending" ? "Gönderiliyor..." : "Gönder"} <FiSend />
             </button>
           </form>
 
           <AnimatePresence>
-            {sent && (
+            {(status === "success" || status === "error") && (
               <motion.div
                 initial={{ opacity: 0, y: 18, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 18, scale: 0.96 }}
-                className="absolute bottom-5 left-1/2 w-[calc(100%-2.5rem)] -translate-x-1/2 rounded-2xl border border-sky/25 bg-sky/10 px-4 py-3 text-sm font-medium text-[#F5E9CA] backdrop-blur-xl"
+                role="status"
+                aria-live="polite"
+                className={`absolute bottom-5 left-1/2 w-[calc(100%-2.5rem)] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm font-medium backdrop-blur-xl ${
+                  status === "success"
+                    ? "border-sky/25 bg-sky/10 text-[#F5E9CA]"
+                    : "border-red-400/25 bg-red-400/10 text-red-100"
+                }`}
               >
-                Mesaj alındı. En kısa sürede dönüş yapılacak.
+                {status === "success"
+                  ? "Mesajın gönderildi. En kısa sürede dönüş yapacağım."
+                  : "Mesaj gönderilemedi. Lütfen tekrar dene veya e-posta adresimden ulaş."}
               </motion.div>
             )}
           </AnimatePresence>
