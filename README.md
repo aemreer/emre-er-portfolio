@@ -2,6 +2,10 @@
 
 React ve JavaScript ile geliştirdiğim projeleri, kullandığım teknolojileri ve frontend alanındaki çalışmalarımı bir araya getiren kişisel web sitem.
 
+## Canlı Site
+
+[ahmetemreer.com](https://ahmetemreer.com/)
+
 ## Kullanılan Teknolojiler
 
 - React
